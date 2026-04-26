@@ -60,7 +60,7 @@ export const register = async (req, res) => {
     let user = await User.findOne({ email });
     if (user) return res.status(400).json({ message: "User already exists" });
 
-    user = await User.create({ name, email, password, role: role || "user" });
+    user = await User.create({ name, email, password, role: role || "customer" });
 
     // Clean up OTP
     await OTP.deleteMany({ email });
@@ -74,9 +74,27 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const { email, password, role } = req.body;
-    const user = await User.findOne({ email, role });
-    if (!user || !(await user.matchPassword(password)))
-      return res.status(401).json({ message: "Invalid email or password for this role" });
+
+    // Find by email first (role-agnostic)
+    const user = await User.findOne({ email });
+    if (!user) return res.status(401).json({ message: "No account found with this email" });
+
+    // Check password
+    if (!(await user.matchPassword(password)))
+      return res.status(401).json({ message: "Incorrect password" });
+
+    // Check role - allow 'user' and 'customer' to be interchangeable
+    const requestedRole = role || 'customer';
+    const userRole = user.role;
+    const isCustomerEquivalent = 
+      (requestedRole === 'customer' || requestedRole === 'user') && 
+      (userRole === 'customer' || userRole === 'user');
+    
+    if (!isCustomerEquivalent && userRole !== requestedRole) {
+      return res.status(401).json({ 
+        message: `This account is registered as '${userRole}'. Please select the correct role.` 
+      });
+    }
 
     res.json({ token: token(user._id, user.role), user: { _id: user._id, name: user.name, email: user.email, role: user.role } });
   } catch (error) {
