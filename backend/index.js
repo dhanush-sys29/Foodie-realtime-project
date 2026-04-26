@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
+import "dotenv/config";
 import http from "http";
 import { Server } from "socket.io";
 
@@ -15,7 +15,7 @@ import qrRoutes from "./routes/qrRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
 import deliveryRoutes from "./routes/deliveryRoutes.js";
 
-dotenv.config();
+
 connectDB();
 
 const app = express();
@@ -43,6 +43,10 @@ io.on("connection", (socket) => {
   socket.on("order:status-update", ({ orderId, status, restaurantId }) => {
     io.to(`order_${orderId}`).emit("order:status-update", { orderId, status });
     if (restaurantId) io.to(`restaurant_${restaurantId}`).emit("order:new", { orderId });
+    // Notify all agents if order is ready/placed
+    if (["Placed", "Confirmed", "Ready"].includes(status)) {
+      io.emit("order:available", { orderId, status });
+    }
   });
 });
 

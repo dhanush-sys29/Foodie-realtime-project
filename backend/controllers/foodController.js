@@ -1,20 +1,15 @@
-import Food from "../models/Food.js";
+import MenuItem from "../models/MenuItem.js";
 
 export const getFoods = async (req, res) => {
   try {
-    const foods = await Food.find().populate("restaurant", "name email");
+    const foods = await MenuItem.find({ isAvailable: true }).populate("restaurant", "name email");
     res.json(foods);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
+// addFood is deprecated as owners use /api/menu
 export const addFood = async (req, res) => {
-  try {
-    req.body.restaurant = req.user.id;
-    const food = await Food.create(req.body);
-    res.status(201).json(food);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
+  res.status(400).json({ message: "Use /api/menu instead" });
 };

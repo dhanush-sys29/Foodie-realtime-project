@@ -10,6 +10,7 @@ export default function OwnerDashboard() {
   const [foods,  setFoods]  = useState([]);
   const [qrSeal, setQrSeal] = useState(null);
   const [newFood, setNewFood] = useState({ name: '', price: '', image: '', category: 'Main', isVeg: true });
+  const [setupForm, setSetupForm] = useState({ name: '', address: '', cuisine: 'Indian' });
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('orders'); // orders, menu, qr, analytics
   const { addToast } = useToast();
@@ -84,13 +85,38 @@ export default function OwnerDashboard() {
   const todayRevenue = orders.filter(o => o.paymentStatus === 'Paid' && new Date(o.createdAt).toDateString() === new Date().toDateString()).reduce((s,o) => s + (o.totalAmount || o.total || 0), 0);
 
   if (loading) return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-100 border-t-primary"></div></div>;
+  
+  const handleSetup = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post('/restaurants', { ...setupForm, cuisine: setupForm.cuisine.split(',').map(c => c.trim()) });
+      addToast('Restaurant Profile Created!', 'success');
+      fetchData(); // Refresh to load the dashboard
+    } catch (err) { addToast('Failed to create profile', 'error'); }
+  };
 
   if (!restaurant) return (
-    <div className="max-w-xl mx-auto py-20 text-center">
+    <div className="max-w-md mx-auto py-20 text-center">
       <h2 className="text-2xl font-bold font-poppins text-textPrimary mb-4">Set up your Restaurant</h2>
       <p className="text-textSecondary mb-8">You need to create a restaurant profile before accessing the dashboard.</p>
-      {/* For brevity, you would have a form here. Assuming it's created via Postman/DB for now */}
-      <div className="p-6 bg-orange-50 rounded-2xl border border-primary/20 text-primary font-medium">Please contact admin to register your restaurant profile.</div>
+      
+      <form onSubmit={handleSetup} className="flex flex-col gap-4 text-left">
+        <div>
+          <label className="block text-sm font-semibold mb-1 text-gray-700">Restaurant Name</label>
+          <input type="text" required value={setupForm.name} onChange={e => setSetupForm({...setupForm, name: e.target.value})} className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary outline-none" placeholder="e.g. Spicy Kitchen" />
+        </div>
+        <div>
+          <label className="block text-sm font-semibold mb-1 text-gray-700">Address</label>
+          <input type="text" required value={setupForm.address} onChange={e => setSetupForm({...setupForm, address: e.target.value})} className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary outline-none" placeholder="e.g. Hyderabad, TS" />
+        </div>
+        <div>
+          <label className="block text-sm font-semibold mb-1 text-gray-700">Cuisine Types (comma separated)</label>
+          <input type="text" required value={setupForm.cuisine} onChange={e => setSetupForm({...setupForm, cuisine: e.target.value})} className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary outline-none" placeholder="e.g. Indian, Chinese" />
+        </div>
+        <button type="submit" className="w-full mt-4 bg-primary text-white font-bold py-3 rounded-xl hover:bg-orange-600 transition-colors shadow-lg shadow-primary/30">
+          Create Profile
+        </button>
+      </form>
     </div>
   );
 

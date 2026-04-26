@@ -43,7 +43,7 @@ export default function CustomerDashboard() {
           {activeOrders.length > 0 ? `You have ${activeOrders.length} active order${activeOrders.length>1?'s':''}. Track it now!` : 'Hungry? Discover great food near you.'}
         </p>
         <div style={{ display:'flex', gap:'12px', flexWrap:'wrap' }}>
-          <button onClick={() => navigate('/')} style={{ background:'#FF6B35', color:'#fff', border:'none', padding:'12px 24px', borderRadius:'12px', fontFamily:'Poppins,sans-serif', fontWeight:700, fontSize:'14px', cursor:'pointer', boxShadow:'0 4px 16px rgba(255,107,53,0.4)' }}>
+          <button onClick={() => navigate('/explore')} style={{ background:'#FF6B35', color:'#fff', border:'none', padding:'12px 24px', borderRadius:'12px', fontFamily:'Poppins,sans-serif', fontWeight:700, fontSize:'14px', cursor:'pointer', boxShadow:'0 4px 16px rgba(255,107,53,0.4)' }}>
             🍽️ Order Now
           </button>
           {activeOrders.length > 0 && (
@@ -65,11 +65,31 @@ export default function CustomerDashboard() {
         ))}
       </div>
 
+      {/* Awaiting Confirmation Banner */}
+      {orders.find(o => o.status === 'Awaiting Confirmation') && (
+        <div style={{ background:'linear-gradient(90deg,#22C55E,#16a34a)', borderRadius:'18px', padding:'20px 24px', marginBottom:'36px', display:'flex', alignItems:'center', justifyContent:'space-between', color:'#fff', boxShadow:'0 10px 25px rgba(34,197,94,0.3)', animation:'pulse 2s infinite' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:'16px' }}>
+            <div style={{ fontSize:'32px' }}>🎁</div>
+            <div>
+              <p style={{ margin:0, fontWeight:700, fontFamily:'Poppins,sans-serif', fontSize:'16px' }}>Your delivery is outside!</p>
+              <p style={{ margin:0, fontSize:'13px', opacity:0.9 }}>The agent is waiting for your confirmation.</p>
+            </div>
+          </div>
+          <button 
+            onClick={() => navigate(`/track/${orders.find(o => o.status === 'Awaiting Confirmation').trackingId}`)}
+            style={{ background:'#fff', color:'#22C55E', border:'none', padding:'10px 20px', borderRadius:'10px', fontWeight:800, cursor:'pointer', fontSize:'13px' }}
+          >
+            Confirm Receipt
+          </button>
+          <style>{`@keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }`}</style>
+        </div>
+      )}
+
       {/* Recent Orders */}
       <div>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'20px' }}>
           <h2 style={{ fontFamily:'Poppins,sans-serif', fontSize:'1.3rem', fontWeight:700, color:'#1F2937', margin:0 }}>Recent Orders</h2>
-          <button onClick={() => navigate('/')} style={{ background:'none', border:'none', color:'#FF6B35', fontFamily:'Poppins,sans-serif', fontWeight:600, fontSize:'13px', cursor:'pointer' }}>+ New Order</button>
+          <button onClick={() => navigate('/explore')} style={{ background:'none', border:'none', color:'#FF6B35', fontFamily:'Poppins,sans-serif', fontWeight:600, fontSize:'13px', cursor:'pointer' }}>+ New Order</button>
         </div>
 
         {loading ? (
@@ -81,7 +101,7 @@ export default function CustomerDashboard() {
             <p style={{ fontSize:'3rem', marginBottom:'12px' }}>🛒</p>
             <p style={{ fontFamily:'Poppins,sans-serif', fontWeight:600, color:'#1F2937', marginBottom:'8px' }}>No orders yet</p>
             <p style={{ color:'#6B7280', fontSize:'14px', marginBottom:'20px' }}>Start exploring restaurants and place your first order!</p>
-            <button onClick={() => navigate('/')} style={{ background:'#FF6B35', color:'#fff', border:'none', padding:'12px 28px', borderRadius:'12px', fontFamily:'Poppins,sans-serif', fontWeight:700, cursor:'pointer' }}>Browse Food</button>
+            <button onClick={() => navigate('/explore')} style={{ background:'#FF6B35', color:'#fff', border:'none', padding:'12px 28px', borderRadius:'12px', fontFamily:'Poppins,sans-serif', fontWeight:700, cursor:'pointer' }}>Browse Food</button>
           </div>
         ) : (
           <div style={{ display:'flex', flexDirection:'column', gap:'14px' }}>

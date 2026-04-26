@@ -19,16 +19,17 @@ const orderSchema = new mongoose.Schema({
   deliveryLocation: { lat: Number, lng: Number },
   status: {
     type: String,
-    enum: ["Placed","Confirmed","Preparing","Ready","Picked Up","Out for Delivery","Delivered","Cancelled"],
+    enum: ["Placed","Confirmed","Preparing","Ready","Picked Up","Out for Delivery","Awaiting Confirmation","Delivered","Cancelled"],
     default: "Placed",
   },
   paymentId:     String,
+  paymentMethod: { type: String, enum: ["Razorpay", "COD"], default: "Razorpay" },
   paymentStatus: { type: String, enum: ["Pending","Paid","Failed"], default: "Pending" },
   qrSealId:      { type: mongoose.Schema.Types.ObjectId, ref: "QRSeal" },
   trackingId:    String,
   estimatedDeliveryTime: Number,
   otp:           String,
   createdAt:     { type: Date, default: Date.now },
-});
+}, { timestamps: true });
 
 export default mongoose.model("Order", orderSchema);

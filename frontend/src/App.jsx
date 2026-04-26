@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import Dashboard     from './pages/Dashboard';
+import Home          from './pages/Home';
 import Login         from './pages/Login';
 import Checkout      from './pages/Checkout';
 import Tracking      from './pages/Tracking';
@@ -17,6 +18,7 @@ export default function App() {
       <main style={{ flex:1 }}>
         <Routes>
           <Route path="/"                    element={<Dashboard />} />
+          <Route path="/explore"             element={<Home />} />
           <Route path="/login"               element={<Login />} />
           <Route path="/checkout"            element={<Checkout />} />
           <Route path="/track/:orderId"      element={<Tracking />} />

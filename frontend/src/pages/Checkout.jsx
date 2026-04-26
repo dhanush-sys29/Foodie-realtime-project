@@ -10,6 +10,7 @@ export default function Checkout() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [address, setAddress] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('Razorpay');
 
   const subtotal     = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
   const deliveryFee  = cart.length > 0 ? 40 : 0;
@@ -29,13 +30,28 @@ export default function Checkout() {
     if (!user) { navigate('/login'); return; }
     if (cart.length === 0) return;
     setLoading(true);
+    
+    const restaurantId = cart[0].restaurant?._id || cart[0].restaurant;
+
     try {
+      if (paymentMethod === 'COD') {
+        const { data: finalOrder } = await api.post('/orders', { 
+          items: cart, 
+          total, 
+          restaurant: restaurantId,
+          deliveryAddress: address,
+          paymentMethod: 'COD'
+        });
+        setCart([]);
+        navigate(`/track/${finalOrder.trackingId}`);
+        setLoading(false);
+        return;
+      }
       const { data: orderData } = await api.post('/payment/create', { amount: total });
-      const restaurantId = cart[0].restaurant?._id || cart[0].restaurant;
 
       if (orderData.id?.startsWith('order_mock_')) {
         await api.post('/payment/verify', {});
-        const { data: finalOrder } = await api.post('/orders', { items: cart, total, restaurant: restaurantId });
+        const { data: finalOrder } = await api.post('/orders', { items: cart, total, restaurant: restaurantId, deliveryAddress: address, paymentMethod: 'Razorpay' });
         setCart([]);
         navigate(`/track/${finalOrder.trackingId}`);
         setLoading(false);
@@ -53,7 +69,7 @@ export default function Checkout() {
         handler: async (response) => {
           const verifyRes = await api.post('/payment/verify', response);
           if (verifyRes.data.success) {
-            const { data: finalOrder } = await api.post('/orders', { items: cart, total, restaurant: restaurantId });
+            const { data: finalOrder } = await api.post('/orders', { items: cart, total, restaurant: restaurantId, deliveryAddress: address, paymentMethod: 'Razorpay' });
             setCart([]);
             navigate(`/track/${finalOrder.trackingId}`);
           }
@@ -163,6 +179,20 @@ export default function Checkout() {
                 </div>
               </div>
 
+              <div className="mb-6">
+                <label className="block text-xs font-semibold text-textSecondary uppercase tracking-wider mb-3 font-poppins">Payment Method</label>
+                <div className="space-y-2">
+                  <label className={`flex items-center p-3 border rounded-xl cursor-pointer transition-colors ${paymentMethod === 'Razorpay' ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-primary/50'}`}>
+                    <input type="radio" name="payment" value="Razorpay" checked={paymentMethod === 'Razorpay'} onChange={() => setPaymentMethod('Razorpay')} className="w-4 h-4 text-primary focus:ring-primary border-gray-300" />
+                    <span className="ml-3 font-medium text-sm text-textPrimary">Pay Online (Razorpay)</span>
+                  </label>
+                  <label className={`flex items-center p-3 border rounded-xl cursor-pointer transition-colors ${paymentMethod === 'COD' ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-primary/50'}`}>
+                    <input type="radio" name="payment" value="COD" checked={paymentMethod === 'COD'} onChange={() => setPaymentMethod('COD')} className="w-4 h-4 text-primary focus:ring-primary border-gray-300" />
+                    <span className="ml-3 font-medium text-sm text-textPrimary">Cash on Delivery (COD)</span>
+                  </label>
+                </div>
+              </div>
+
               <button
                 onClick={handlePayment}
                 disabled={loading || cart.length === 0}
@@ -170,12 +200,14 @@ export default function Checkout() {
               >
                 {loading
                   ? <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></span> Processing…</>
-                  : '💳 Pay with Razorpay'}
+                  : paymentMethod === 'COD' ? '🛒 Place Order' : '💳 Pay with Razorpay'}
               </button>
 
-              <p className="text-xs text-textSecondary text-center mt-3 font-inter">
-                🔒 Secured by Razorpay · 256-bit encryption
-              </p>
+              {paymentMethod === 'Razorpay' && (
+                <p className="text-xs text-textSecondary text-center mt-3 font-inter">
+                  🔒 Secured by Razorpay · 256-bit encryption
+                </p>
+              )}
             </div>
           </div>
         </div>

@@ -7,7 +7,13 @@ const router = express.Router();
 // GET /api/delivery/available — orders with status Ready/Placed
 router.get("/available", protect, authorize("agent"), async (req, res) => {
   try {
-    const orders = await Order.find({ status: { $in: ["Ready", "Placed", "Confirmed"] } })
+    const orders = await Order.find({ 
+      status: { $in: ["Ready", "Placed", "Confirmed", "Preparing"] },
+      $or: [
+        { deliveryAgent: { $exists: false } },
+        { deliveryAgent: null }
+      ]
+    })
       .populate("restaurant", "name address location")
       .populate("customer user", "name phone")
       .sort({ createdAt: -1 });

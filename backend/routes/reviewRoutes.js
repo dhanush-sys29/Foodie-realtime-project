@@ -6,7 +6,7 @@ import { protect, authorize } from "../middlewares/auth.js";
 const router = express.Router();
 
 // POST /api/reviews
-router.post("/", protect, authorize("customer"), async (req, res) => {
+router.post("/", protect, authorize("customer", "user"), async (req, res) => {
   try {
     const { restaurantId, orderId, rating, comment } = req.body;
     const review = await Review.create({

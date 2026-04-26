@@ -62,7 +62,7 @@ export default function Login() {
 
   const handleGoogle = async (res) => {
     try { await googleLogin(res.credential, role); navigate('/'); }
-    catch (err) { setError('Google Auth failed.'); }
+    catch (err) { setError(err.response?.data?.message || 'Google Auth failed.'); }
   };
 
   const particles = Array.from({length:20}, (_,i) => ({

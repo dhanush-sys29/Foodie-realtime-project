@@ -7,6 +7,8 @@ import QRScanner from '../components/QRScanner';
 import api from '../api/api';
 
 const STEPS = ['Placed', 'Confirmed', 'Preparing', 'Ready', 'Out for Delivery', 'Delivered'];
+const NOTIFY_SOUND = 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3';
+
 const MAP_OPTIONS = {
   disableDefaultUI: true,
   zoomControl: true,
@@ -31,6 +33,12 @@ export default function Tracking() {
   });
 
   useEffect(() => {
+    if (Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  useEffect(() => {
     fetchOrder();
   }, [trackingId]);
 
@@ -40,8 +48,20 @@ export default function Tracking() {
       socket.on('delivery:location', ({ lat, lng }) => {
         setAgentLocation({ lat, lng });
       });
+      socket.on('order:status-update', ({ orderId, status }) => {
+        if (order && orderId === order._id) {
+          if (status === 'Awaiting Confirmation') {
+            new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(e => console.log('Sound blocked'));
+            if (Notification.permission === 'granted') {
+              new Notification('FOODIE: Your delivery has arrived!', { body: 'Click to confirm receipt and enjoy your food.' });
+            }
+          }
+          fetchOrder();
+        }
+      });
       return () => {
         socket.off('delivery:location');
+        socket.off('order:status-update');
       };
     }
   }, [socket, order]);
@@ -96,9 +116,20 @@ export default function Tracking() {
   const onLoad = useCallback((map) => { mapRef.current = map; }, []);
   const onUnmount = useCallback(() => { mapRef.current = null; }, []);
 
+  const confirmReceipt = async () => {
+    try {
+      await api.put(`/orders/${order._id}/status`, { status: 'Delivered' });
+      if (socket) {
+        socket.emit('order:status-update', { orderId: order._id, status: 'Delivered' });
+      }
+      addToast('Thank you for confirming! Enjoy your food.', 'success');
+      fetchOrder();
+    } catch (e) { addToast('Failed to confirm', 'error'); }
+  };
+
   if (!order) return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-primary"></div></div>;
 
-  const currentStep = STEPS.indexOf(order.status);
+  const currentStep = STEPS.indexOf(order.status === 'Awaiting Confirmation' ? 'Out for Delivery' : order.status);
   const isDelivered = order.status === 'Delivered';
 
   return (
@@ -202,6 +233,16 @@ export default function Tracking() {
 
         {/* Details Sidebar */}
         <div className="space-y-6">
+          {order.status === 'Awaiting Confirmation' && (
+            <div className="bg-success/10 border border-success/30 rounded-3xl p-6 text-center animate-pulse shadow-lg shadow-success/10">
+              <h3 className="text-xl font-bold font-poppins text-success mb-2">Delivery Arrived!</h3>
+              <p className="text-sm font-medium text-success/80 mb-4">The agent marked this order as delivered. Please confirm you received it.</p>
+              <button onClick={confirmReceipt} className="w-full bg-success text-white font-bold py-3.5 rounded-xl hover:bg-green-600 transition-colors shadow-md">
+                👍 Yes, I got it
+              </button>
+            </div>
+          )}
+
           <div className="bg-white rounded-3xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100 p-6">
             <h3 className="font-bold font-poppins text-textPrimary text-lg mb-4">Order Summary</h3>
             <div className="flex items-center gap-3 pb-4 mb-4 border-b border-gray-100">

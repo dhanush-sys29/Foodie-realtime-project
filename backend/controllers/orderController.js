@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Order from "../models/Order.js";
 import Restaurant from "../models/Restaurant.js";
 import { nanoid } from "nanoid";
@@ -74,11 +75,21 @@ export const getOrders = async (req, res) => {
 
 export const getOrderById = async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id)
-      .populate("restaurant", "name image address")
-      .populate("customer user", "name email")
-      .populate("deliveryAgent agent", "name email phone");
+    const id = req.params.id;
+    let order;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      order = await Order.findById(id);
+    }
+    if (!order) {
+      order = await Order.findOne({ trackingId: id });
+    }
+
     if (!order) return res.status(404).json({ message: "Order not found" });
+
+    await order.populate("restaurant", "name image address");
+    await order.populate("customer user", "name email");
+    await order.populate("deliveryAgent agent", "name email phone");
+
     res.json(order);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -88,9 +99,21 @@ export const getOrderById = async (req, res) => {
 export const updateOrderStatus = async (req, res) => {
   try {
     const { status, agentId } = req.body;
-    const order = await Order.findById(req.params.id)
-      .populate('customer user', 'name email');
+    const id = req.params.id;
+    
+    let order;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      order = await Order.findById(id);
+    }
+    
+    if (!order) {
+      order = await Order.findOne({ trackingId: id });
+    }
+
     if (!order) return res.status(404).json({ message: "Order not found" });
+    
+    await order.populate('customer user', 'name email');
+    
     if (status) order.status = status;
     if (agentId) { order.agent = agentId; order.deliveryAgent = agentId; }
     await order.save();
