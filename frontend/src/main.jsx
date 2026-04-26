@@ -8,7 +8,7 @@ import { ToastProvider } from "./context/ToastContext";
 import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_ID || "dummy"}>
+  <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_ID || "648438720930-mu88n58d7m24379cpkddgj2qvo8obkbd.apps.googleusercontent.com"}>
     <BrowserRouter>
       <AuthProvider>
         <CartProvider>
